@@ -1,8 +1,6 @@
-package com.kakawait;
+package quest.cas.demo;
 
-import com.kakawait.spring.boot.security.cas.CasHttpSecurityConfigurer;
-import com.kakawait.spring.boot.security.cas.CasSecurityConfigurerAdapter;
-import com.kakawait.spring.boot.security.cas.CasSecurityProperties;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.Http401AuthenticationEntryPoint;
@@ -28,13 +26,31 @@ import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.kakawait.spring.boot.security.cas.CasHttpSecurityConfigurer;
+import com.kakawait.spring.boot.security.cas.CasSecurityConfigurerAdapter;
+import com.kakawait.spring.boot.security.cas.CasSecurityProperties;
+
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+
 
 @SpringBootApplication
-public class CasSecuritySpringBootSampleApplication {
+public class CasDemoApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(CasSecuritySpringBootSampleApplication.class, args);
+    	
+    	OverrideCertificateValidation();
+    	SpringApplication.run(CasDemoApplication.class, args);
     }
 
     @Bean
@@ -50,7 +66,6 @@ public class CasSecuritySpringBootSampleApplication {
     static class LogoutConfiguration extends CasSecurityConfigurerAdapter {
         @Override
         public void configure(HttpSecurity http) throws Exception {
-            // Allow GET method to /logout even if CSRF is enabled
             http.logout().logoutRequestMatcher(new AntPathRequestMatcher("/logout"));
         }
     }
@@ -59,10 +74,7 @@ public class CasSecuritySpringBootSampleApplication {
     static class ApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
         @Override
         protected void configure(HttpSecurity http) throws Exception {
-            http.antMatcher("/api/**").authorizeRequests().anyRequest().authenticated();
-            // Applying CAS security on current HttpSecurity (FilterChain)
-            // I'm not using .apply() from HttpSecurity due to following issue
-            // https://github.com/spring-projects/spring-security/issues/4422
+            http.antMatcher("/api/**").authorizeRequests().anyRequest().authenticated();           
             CasHttpSecurityConfigurer.cas().configure(http);
             http.exceptionHandling().authenticationEntryPoint(new Http401AuthenticationEntryPoint("CAS"));
         }
@@ -121,14 +133,53 @@ public class CasSecuritySpringBootSampleApplication {
         }
     }
 
+
     @RestController
     @RequestMapping(value = "/api")
     static class HelloWorldController {
 
         @GetMapping
         public @ResponseBody String hello(Principal principal) {
-            return principal == null ? "Hello anonymous" : "Hello " + principal.getName();
+            return principal == null ? "Hello anonymous" : "Welcome to the api landing page " + principal.getName();
         }
+    }
+    
+    static void OverrideCertificateValidation()
+    {
+    	TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
+            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+	                return null;
+	            }
+	            public void checkClientTrusted(X509Certificate[] certs, String authType) {
+	            }
+	            public void checkServerTrusted(X509Certificate[] certs, String authType) {
+	            }
+        	}
+    	};
+
+	    // Install the all-trusting trust manager
+	    SSLContext sc = null;
+		try {
+			sc = SSLContext.getInstance("SSL");
+		} catch (NoSuchAlgorithmException e) {	
+			e.printStackTrace();
+		}
+	    try {
+			sc.init(null, trustAllCerts, new java.security.SecureRandom());
+		} catch (KeyManagementException e) {		
+			e.printStackTrace();
+		}
+	    
+	    HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+	    // Create a trusting (all) host name verifier
+	    HostnameVerifier allHostsValid = new HostnameVerifier() {
+	        public boolean verify(String hostname, SSLSession session) {
+	            return true;
+	        }
+	    };
+
+	    // Install the trusting (all) host verifier
+	    HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
     }
 
 }
