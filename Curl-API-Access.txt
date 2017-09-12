@@ -1,0 +1,16 @@
+
+//1. Get Ticket granting ticket from CAS service
+curl -k -s   -b cookie1.txt  -c cookie1.txt --data "username=casuser&password=Mellon" -X POST https://localhost:8443/cas/v1/tickets 
+
+>>expected result 201 TGT created with TGT id
+
+// 2. Request ST using TGT - Response ST TICKET: ST-18-1WqgeEsRBSLQ92GeOwXx-cas
+curl -k -s  -b cookie1.txt -c cookie1.txt --data "service=http://localhost:8080/api/now" -X POST https://localhost:8443/cas/v1/tickets/TGT-19-ek9KiBrhhGp3c4GNWnLKFf3iT0rZgyNaIgQ62eHysFrHvW5v4q-DESKTOP-277V9DE
+
+>>expected result service token
+
+// 3. Use ST Ticket to "accessing protected app
+curl -k -s  -b cookie1.txt -c cookie1.txt  --data "ticket=ST-6-de1fIch3wehP2w5sdlH9-DESKTOP-277V9DE" http://localhost:8080/api/now -o output1.txt -L
+
+>>expected result output file with time
+
