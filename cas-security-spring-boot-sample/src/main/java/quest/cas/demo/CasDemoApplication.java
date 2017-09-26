@@ -89,20 +89,7 @@ public class CasDemoApplication {
             this.casSecurityProperties = casSecurityProperties;
         }
 
-        @Override
-        public void configure(HttpSecurity http) throws Exception {
-            http.logout()
-                .permitAll()
-                .logoutSuccessUrl("/logout.html")
-                .logoutRequestMatcher(new AntPathRequestMatcher("/logout"));
-            String logoutUrl = UriComponentsBuilder
-                    .fromUri(casSecurityProperties.getServer().getBaseUrl())
-                    .path(casSecurityProperties.getServer().getPaths().getLogout())
-                    .toUriString();
-            LogoutFilter filter = new LogoutFilter(logoutUrl, new SecurityContextLogoutHandler());
-            filter.setFilterProcessesUrl("/cas/logout");
-            http.addFilterBefore(filter, LogoutFilter.class);
-        }
+       
     }
 
     @Profile("custom-logout")

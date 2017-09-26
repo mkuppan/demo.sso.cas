@@ -1,10 +1,26 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8" />
-    <title>Index page</title>
+	<title>Quest CAS Authentication Demo</title>
+	<style>
+		body {
+			background-color: #2D2D2D;
+		}
+		
+		h1 {
+			color: #C26356;
+			font-size: 30px;
+			font-family: Menlo, Monaco, fixed-width;
+		}
+		
+		p {
+			color: white;
+			font-family: "Source Code Pro", Menlo, Monaco, fixed-width;
+		}
+	</style>
+	
 </head>
 <body>
-<h2 th:text="${username} ? 'Hello, ' + ${username} + '!' : 'Hello world!'">Hello world!</h2>
+	<h1 th:text="${username} ? 'Hello, ' + ${username} + ' you have successfully logged into Quest Application!' : 'Authentication Failed'">Authentication Failed!</h1>	
 </body>
 </html>
